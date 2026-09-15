@@ -1,0 +1,30 @@
+flowchart TD
+    subgraph SRC["Current evidence sources"]
+        DOCS["Splunk public docs,\nproduct pages, Splunkbase\n(OFFICIAL REFERENCE)"]
+        SKETCH["This book's own\nillustrative diagrams\n(CONCEPTUAL)"]
+    end
+
+    BOOK["Parts 1-19's claims,\nas published"]
+    DOCS --> BOOK
+    SKETCH --> BOOK
+    BOOK -->|"gap named in\nTable 20.1"| GAP{"No-instance-exists\ngap?"}
+
+    GAP -->|no - unreachable docs\nor product-velocity gap| REMEDY1["Re-check cited source\nor find a reachable mirror\n(no lab needed)"]
+
+    GAP -->|yes| LAB["Hypothetical single-instance\nSplunk lab (not built)"]
+
+    subgraph LABBUILD["Inside the hypothetical lab"]
+        UF1["Forwarder on honeynet host"]
+        UF2["Forwarder on vuln-scanner host"]
+        RAWIDX[("Raw indexes:\nhoneynet + vulnscan events")]
+        CIMMAP["CIM field mapping\n(tags.conf / eventtypes.conf)"]
+        DM["Accelerated data model\n+ tstats"]
+        ES["Enterprise Security:\ncorrelation search + notable"]
+    end
+
+    LAB --> UF1 --> RAWIDX
+    LAB --> UF2 --> RAWIDX
+    RAWIDX --> CIMMAP
+    CIMMAP --> DM --> UPGRADE1["Parts 3, 10-12 upgraded:\nreal tstats counts,\nreal Job Inspector output"]
+    CIMMAP --> UPGRADE2["Parts 5-7 upgraded:\nreal CIM compliance\ncheck output"]
+    CIMMAP --> ES --> UPGRADE3["Parts 14, 16 upgraded:\nreal notable + throttling\nbehavior"]

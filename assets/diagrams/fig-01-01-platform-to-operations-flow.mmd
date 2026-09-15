@@ -1,0 +1,14 @@
+flowchart LR
+    subgraph PLATFORM["Platform layer — Sections A-D"]
+        P2["Part 2\nDeployment architecture"] --> P3["Part 3\nIndexes, sourcetypes,\nbucket lifecycle"]
+        P3 --> P4["Part 4\nLicensing and ingest\neconomics"]
+        P4 --> P57["Parts 5-7\nCIM, data models,\nonboarding"]
+        P57 --> P89["Parts 8-9\nLookups and macros"]
+        P89 --> P1012["Parts 10-12\nAcceleration and\nperformance"]
+    end
+    subgraph OPERATIONS["Operations layer — Sections E-F"]
+        P1317["Parts 13-17\nEnterprise Security:\ncorrelation, RBA,\nnotables, A&I"]
+        P1819["Parts 18-19\nDashboards and\ninvestigation workflow"]
+    end
+    P1012 --> P1317 --> P1819
+    P1819 --> P20["Part 20\nValidation gaps and\npath to real evidence"]

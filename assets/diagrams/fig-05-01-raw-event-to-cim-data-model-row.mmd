@@ -1,0 +1,11 @@
+flowchart TD
+    A["Raw event arrives at an indexer"] --> B["Index-time parsing\n(props.conf / transforms.conf)"]
+    B --> C["Event stored in a bucket:\nraw text plus indexed fields"]
+    C --> D["Search-time field aliasing\n(FIELDALIAS in props.conf)"]
+    D --> E["Calculated fields\n(EVAL- in props.conf)"]
+    E --> F{"Event matches an\neventtypes.conf search string?"}
+    F -- "No" --> G["Event stays searchable directly,\nbut invisible to any tag= search"]
+    F -- "Yes" --> H["tags.conf applies the\nmatching tag(s)"]
+    H --> I["CIM data model's constraint\nsearch matches the tagged event"]
+    I --> J["Event appears as a row in the\ndata model's dataset"]
+    J --> K["Pivot, tstats, or a correlation\nsearch reads that dataset (Parts 6, 10, 14)"]

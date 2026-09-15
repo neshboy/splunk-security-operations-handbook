@@ -1,0 +1,11 @@
+flowchart LR
+    A[Raw event arrives] --> B[Sourcetype assignment]
+    B --> C["Field extraction (props.conf / transforms.conf)"]
+    C --> D["Field aliasing onto CIM names (FIELDALIAS)"]
+    D --> E["Calculated CIM fields (EVAL-fieldname)"]
+    E --> F["Eventtype classification (eventtypes.conf)"]
+    F --> G["Tag assignment (tags.conf)"]
+    G --> H["CIM data model membership"]
+    H --> I{"CIM Add-on compliance check"}
+    I -->|pass| J["Queryable via Pivot / tstats"]
+    I -->|fail| C

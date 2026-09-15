@@ -1,0 +1,10 @@
+flowchart LR
+    A["Raw indexed event\nsourcetype=WinEventLog:Security"] -->|"tags.conf / eventtypes.conf\n(Part 5, Part 7)"| B["CIM-tagged event\ntag=authentication"]
+    B --> C["Data model: Authentication\nroot event dataset"]
+    C --> D["Child dataset:\nFailed_Authentication"]
+    D --> E{"Accelerated?\n(Part 10)"}
+    E -->|"No"| F["| datamodel search\nreads raw events per run"]
+    E -->|"Yes"| G["tsidx summary\n| tstats from datamodel=..."]
+    F --> H["Pivot Editor\ntable / chart"]
+    G --> H
+    H --> I["Report or dashboard panel\n(Part 18)"]

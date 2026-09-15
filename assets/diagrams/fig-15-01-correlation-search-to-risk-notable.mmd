@@ -1,0 +1,12 @@
+flowchart LR
+    subgraph RULES[Risk-annotating correlation searches - risk rules]
+        R1["Suspicious LSASS access\nrisk_object_type=system\nrisk_score=50"]
+        R2["Anomalous off-hours logon\nrisk_object_type=user\nrisk_score=20"]
+        R3["New scheduled task on host\nrisk_object_type=system\nrisk_score=30"]
+    end
+    RULES -->|action.risk adaptive response action| RE["Risk event(s)\nindex=risk\nRisk.All_Risk data model"]
+    RE --> AGG["Aggregate/threshold search\ntstats sum(calculated_risk_score),\ndc(source) BY risk_object,\nrisk_object_type"]
+    AGG -->|sum below threshold| RE
+    AGG -->|sum crosses threshold| NOT["Notable event\ntitle prefixed 'RBA: '"]
+    NOT --> IR["Incident Review\nPart 16"]
+    RE -.->|pivot from risk_object, no threshold crossed| HUNT["Ad hoc hunt against\nthe risk index - Part 19"]
