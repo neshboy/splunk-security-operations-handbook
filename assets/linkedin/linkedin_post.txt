@@ -1,0 +1,12 @@
+Splunk Security Operations. A new handbook. Free. Public.
+
+Knowing how to write a good SPL query isn't the same as running Splunk as a security platform — the platform is everything else.
+
+From deployment architecture and the bucket lifecycle → the Common Information Model and data models → lookups and macros as maintained detection infrastructure → acceleration and performance at scale → Splunk Enterprise Security's full correlation-search-to-notable-event pipeline → dashboards and investigation workflow.
+
+Inside: Splunk deployment architecture (indexers, search heads, forwarders, clustering), indexes/sourcetypes and the bucket lifecycle, licensing and ingest economics, the Common Information Model, data models and Pivot, CIM-compliant data onboarding, lookup tables and KV Store collections, search macros, data model and report acceleration (tstats), summary indexing, search performance and the Job Inspector, Enterprise Security architecture and editions, correlation searches and MITRE ATT&CK-mapped content, risk-based alerting, notable events and Incident Review, asset and identity correlation, dashboards and Dashboard Studio, and Splunk-specific investigation workflows.
+
+Every part is approached from multiple angles — SOC analyst, detection engineer, threat hunter, platform engineer, and SOC management.
+
+Full PDF: https://raw.githubusercontent.com/neshboy/splunk-security-operations-handbook/master/Splunk_Security_Operations.pdf
+Repo: https://github.com/neshboy/splunk-security-operations-handbook
