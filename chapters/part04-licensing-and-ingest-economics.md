@@ -4,7 +4,7 @@ part: 4
 author: "author-agent"
 reviewer: "technical-reviewer-agent"
 status: "reviewed"
-last_validated: "2026-09-15"
+last_validated: "2026-09-16"
 depends_on: []
 ---
 
@@ -16,7 +16,7 @@ Part 2 covered where indexers, search heads, and forwarders sit relative to each
 
 This part does not re-litigate index design or bucket retention mechanics — Part 3 owns those, and this part cites them wherever a cost lever depends on them. It also does not touch SPL syntax: nothing here needs `stats` or `transaction` beyond what's already covered in DEH Part 26 §2–3, and the one place a query would help illustrate a cost decision, this part points at Part 26 rather than re-deriving pipeline syntax.
 
-**Evidentiary note, stated once and not repeated at every section:** no Splunk deployment exists in this book's author's lab, and licensing behavior specifically is not the kind of thing a lab of any size would surface convincingly — license economics show up at fleet scale, over months, against a real bill. Every platform-behavior claim below is either sourced from Splunk's own public pricing and documentation pages (cited in `REFERENCES.md`, retrieved 2026-09-15) or explicitly flagged as unverified against current documentation, per STYLE-GUIDE.md §9.4's disclosed constraint that `docs.splunk.com` itself was not reliably fetchable during this book's research.
+**Evidentiary note, stated once and not repeated at every section:** no Splunk deployment exists in this book's author's lab, and licensing behavior specifically is not the kind of thing a lab of any size would surface convincingly — license economics show up at fleet scale, over months, against a real bill. Every platform-behavior claim below is either sourced from Splunk's own public pricing and documentation pages (cited in `REFERENCES.md`, retrieved 2026-09-15) or explicitly flagged as unverified against current documentation, per STYLE-GUIDE.md §9.4's disclosed constraint that `docs.splunk.com` itself was not reliably fetchable during this book's research. §5 documents one narrow, dated exception to that constraint — two `docs.splunk.com` Admin Manual pages whose content was retrieved indirectly and cross-checked before being cited — with the retrieval method disclosed there rather than glossed over.
 
 ---
 
@@ -81,17 +81,37 @@ The rest of this part treats these two models — ingest and workload — as the
 
 ---
 
-## 5. License warnings and violations: what's stable, and what this book can't confirm
+## 5. License warnings and violations: the metering formula and the current thresholds
 
-**[PLATFORM ENGINEER]** Splunk's license enforcement, going back many versions, has tracked usage against a rolling window rather than a single day's overage in isolation — the practical effect being that a single one-off spike (a misconfigured forwarder replaying an overnight backlog, a log source briefly misconfigured to double-ship) behaves differently under enforcement than the same volume sustained day after day. That much is long-standing, widely-documented platform behavior and unlikely to have changed in shape even if specific numbers have moved.
+**[PLATFORM ENGINEER]** Splunk's license enforcement, going back many versions, has tracked usage against a rolling window rather than a single day's overage in isolation — the practical effect being that a single one-off spike (a misconfigured forwarder replaying an overnight backlog, a log source briefly misconfigured to double-ship) behaves differently under enforcement than the same volume sustained day after day. Stated as a formula, using the same per-indexer measurement point §2 already established:
 
-What this book will not restate as verified fact is the *exact* current threshold (how many exceedances within the window trigger a formal violation) or the *exact* current consequence of a violation once triggered — historically a search-blocking enforcement action on some license types, and a subject Splunk has adjusted its own policy on more than once. This book's own research tooling could not fetch Splunk's current licensing-mechanics documentation directly (`docs.splunk.com`; see STYLE-GUIDE.md §9.4's disclosed constraint), so neither number is given here dressed up as a Product Version Note with a citation this book doesn't actually have.
+```
+Daily_Usage(pool, day) = SUM over indexer i in pool of RawPipelineBytes(i, day)
+
+Warning(day) = 1 if Daily_Usage(pool, day) > Licensed_Daily_Volume(pool), else 0
+
+InViolation(pool) = TRUE when SUM over d in rolling_window of Warning(d) >= violation_threshold
+```
+
+- `pool` — a Splunk license pool: a set of indexers (license peers) sharing one purchased daily-volume allocation, tracked centrally by the license manager.
+- `i` — one indexer (license peer) belonging to that pool.
+- `RawPipelineBytes(i, day)` — the raw, pre-compression byte volume indexer `i` placed into its indexing pipeline on a given day, measured midnight-to-midnight on the license manager's system clock (§2); data filtered or dropped before reaching this pipeline stage is never counted, which is exactly why §6.2's null-queue filtering reduces this number and search-time field extraction does not.
+- `Licensed_Daily_Volume(pool)` — the daily GB ceiling purchased for that pool.
+- `Warning(day)` — `1` if the pool's summed usage that day exceeded its ceiling, `0` otherwise.
+- `rolling_window` / `violation_threshold` — the trailing period, in days, over which warning-days are counted, and the number of warning-days within it that puts the pool in violation. Both are license-type-specific, not one universal constant — see the Product Version Note below.
+
+> **Product Version Note**
+> `rolling_window` and `violation_threshold` vary by license type, per Splunk's own current Admin Manual page "About license violations": for a Splunk Enterprise license stack licensed at **100 GB/day or higher**, exceeding the daily ceiling generates a warning but — as documented — does **not** disable search at all. For a stack licensed **under 100 GB/day**, `violation_threshold = 45` warnings within `rolling_window = 60` days puts the pool in violation, and search (including scheduled reports and alerts) is blocked while in violation, though indexing continues uninterrupted. Trial, Dev/Test, and Developer licenses use `violation_threshold = 5` within a 30-day rolling window; the Free license uses `violation_threshold = 3` within a 30-day rolling window; both block search on violation, with no reset available for Trial or Free. Separately, a license peer unreachable from its license manager for 72 hours or more is itself placed in violation, with search blocked, independent of any indexing-volume warning. As of 2026-09-16, verified against Splunk's own Admin Manual page "About license violations" (`docs.splunk.com`, Splunk Enterprise 10.4 admin-manual tree; `REFERENCES.md` entry `[SPLUNK-DOCS-LICENSE-VIOLATIONS]`) — see the sourcing note directly below for exactly how this book reached a page its own research tooling normally can't. What would make this stale: Splunk changing either number, removing the 100 GB/day split, or further revising violation consequences for paid Enterprise/Cloud tiers — a policy area Splunk has already revised more than once.
+
+**[PLATFORM ENGINEER]** The 100 GB/day split matters more than it looks like a footnote. It means the search-blocking "violation" most administrators picture — and this book itself pictured, unverified, until this section's research — mainly still applies to Trial, Dev/Test, Developer, and Free licenses, plus small production Enterprise stacks under 100 GB/day. A production SOC running a paid Enterprise or Cloud Platform pool at or above that volume gets warnings and, per Splunk's own General Terms (`REFERENCES.md` entry `[SPLUNK-GENERAL-TERMS]`), a right for Splunk to invoice for sustained overage at list price — not a search-blocking violation state. §9's operational-metric discipline (watch headroom before a warning banner ever appears) is worth exactly as much either way, since an invoice for overage is still an unbudgeted cost surprise, but it is a different failure mode than losing search access outright — a SOC manager sizing risk around "what happens if we go over" should know which of the two failure modes their own license actually carries before assuming either is the default.
+
+**Sourcing note:** `docs.splunk.com` still returns HTTP 403 to this book's research tooling on a direct fetch, exactly as `STYLE-GUIDE.md` §9.4 already discloses for every other citation in this book. Unlike those other citations, this specific page's content was retrievable indirectly, through a text-extraction fetch of the same URL rather than a direct request, and cross-checked across four separate fetches for internal consistency (matching page title "About license violations | Splunk Enterprise," breadcrumb path, and a 2026-05-17 last-modified timestamp reported on every pass) before being treated as reliable enough to state as fact here. Treat this as a narrow, specific exception, not a claim that `docs.splunk.com` is now generally fetchable — every other unfetched `docs.splunk.com` reference elsewhere in this book still carries the same unresolved gap it did before.
 
 > **Engineering Reality**
-> Whatever the current threshold and consequence are, they are visible in your own instance without guessing: `Settings > Licensing` on a self-managed deployment, or the equivalent capacity/usage notification in Splunk Cloud Platform, shows current usage against the rolling window directly. Confirm both the threshold and the consequence there — or against your current support contract's licensing terms — before assuming either matches what an older deployment, a training course from several versions back, or a colleague's memory suggests. This is exactly the category of default Splunk has changed before without restructuring anything else around it.
+> The numbers above are Splunk's stated policy, not a guarantee about your own instance's history or contract. `Settings > Licensing` on a self-managed deployment, or the equivalent capacity/usage notification in Splunk Cloud Platform, shows current usage against the rolling window directly, and your own support contract can carry negotiated terms Splunk's general documentation doesn't reflect. Confirm which license type and volume tier your own pool actually falls under — that determines which row of the Product Version Note above applies to you — before assuming either the 45-in-60 or the 5-in-30 rule is the one your deployment lives under.
 
 > **What Would Change My Mind**
-> A real Splunk deployment's own `Settings > Licensing > Usage Report`, observed across at least one full rolling window, would let this section state the current threshold and consequence as a verified, dated fact instead of an acknowledged gap. Until this book's evidence base includes that (see Part 20), treat this section's hedge as the honest state of the claim, not an oversight to route around by trusting an unsourced number instead.
+> This section can now state Splunk's documented mechanics as a sourced fact rather than an acknowledged gap. What it still can't state is how that policy plays out against a real license manager's Usage Report over a real rolling window — whether warning-day counting has any documented edge case at a pool boundary, whether clock skew between a peer and the license manager has ever produced a disputed warning, and whether the 72-hour peer-disconnection rule interacts with the daily-volume rule in a way this page doesn't spell out. A real Splunk deployment's own Usage Report, observed across at least one full rolling window, is still the specific thing that would move this from "documented policy" to "verified in practice" (see Part 20).
 
 ---
 
