@@ -155,14 +155,14 @@ coldToFrozenDir        = $SPLUNK_DB/pci_cardholder_data/frozendb
 
 ```mermaid
 stateDiagram-v2
-    [*] --> Hot: new events written; index has one\nor more open, writable hot buckets
-    Hot --> Warm: maxDataSize reached, maxHotBuckets\nexceeded, or splunkd restarts and rolls the bucket
+    [*] --> Hot: new events written, index has one or more open, writable hot buckets
+    Hot --> Warm: maxDataSize reached, maxHotBuckets exceeded, or splunkd restarts and rolls the bucket
     Warm --> Cold: maxWarmDBCount exceeded for the index
-    Cold --> Frozen: bucket age passes frozenTimePeriodInSecs,\nor an index/volume size cap is exceeded
+    Cold --> Frozen: bucket age passes frozenTimePeriodInSecs, or an index/volume size cap is exceeded
     Frozen --> Deleted: no coldToFrozenDir / coldToFrozenScript configured
     Frozen --> Archived: coldToFrozenDir or coldToFrozenScript configured
-    Archived --> Thawed: administrator manually restores\ninto thawedPath for a specific search need
-    Thawed --> [*]: searchable again; not managed by\nthe ordinary retention clock
+    Archived --> Thawed: administrator manually restores into thawedPath for a specific search need
+    Thawed --> [*]: searchable again, not managed by the ordinary retention clock
     Deleted --> [*]
 ```
 
