@@ -61,6 +61,16 @@ alone, is too common to page anyone on. Enabled as traditional per-event notable
 drowns in noise or — more commonly — never turns them on at all, which means the actual multi-step
 behavior they'd have caught together goes completely dark.
 
+This isn't just an intuition about noisy rules; it's a specific, formally studied problem. When the
+population of genuinely malicious events is a tiny fraction of total activity, even an analytic with
+a respectable-looking false-positive *rate* in isolation still produces mostly false alarms in
+absolute *count* once it runs continuously against real-world traffic — the base-rate fallacy,
+applied to intrusion detection specifically by Stefan Axelsson's widely-cited analysis of why this
+makes single-analytic detection so hard to operate at low alert volume (`REFERENCES.md` entry
+`[AXELSSON-BASE-RATE-FALLACY]`). Aggregating several individually weak analytics' contributions
+before ever generating a notable — RBA's whole mechanism, below — is one concrete, Splunk-specific
+answer to exactly that problem, not merely a noise-reduction convenience layered on top of it.
+
 Risk-Based Alerting changes the unit of output. A risk-annotating correlation search — Splunk's own
 terminology calls it a **risk rule** — does not create a notable on a match. It appends one **risk
 event** to a dedicated, retained dataset (§4 below), scored and attributed to a specific risk object.
