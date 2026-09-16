@@ -71,6 +71,25 @@ makes single-analytic detection so hard to operate at low alert volume (`REFEREN
 before ever generating a notable — RBA's whole mechanism, below — is one concrete, Splunk-specific
 answer to exactly that problem, not merely a noise-reduction convenience layered on top of it.
 
+Stated as the Bayesian update it is, the base-rate fallacy is this: the detection rate an analyst
+actually cares about is not the detector's own false-positive rate, but the probability an alarm is
+real given that it fired at all — and that probability is pulled down hard by a low base rate no
+matter how good the detector's isolated false-positive rate looks.
+
+```
+P(I|A) = [ P(A|I) × P(I) ] / [ P(A|I) × P(I) + P(A|¬I) × P(¬I) ]
+```
+
+- **P(I)** — the base rate: the fraction of all events that are a genuine intrusion, before any
+  detector runs.
+- **P(A|I)** — the detector's true positive rate: given a genuine intrusion, the probability it
+  alarms.
+- **P(A|¬I)** — the detector's false positive rate: given no intrusion, the probability it still
+  alarms.
+- **P(¬I)** — the complement of the base rate, `1 - P(I)`.
+- **P(I|A)** — the number an analyst actually needs: given that an alarm fired, the probability it
+  corresponds to a genuine intrusion.
+
 Risk-Based Alerting changes the unit of output. A risk-annotating correlation search — Splunk's own
 terminology calls it a **risk rule** — does not create a notable on a match. It appends one **risk
 event** to a dedicated, retained dataset (§4 below), scored and attributed to a specific risk object.
